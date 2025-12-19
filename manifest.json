@@ -1,8 +1,8 @@
 {
   "required_api_version": "^2.0.0",
-  "name": "Perplexity Search",
+  "name": "Perplexity Search into Space",
   "description": "Search Perplexity directly from Ulauncher",
-  "developer_name": "David Mereacre",
+  "developer_name": "Steve GCLVS",
   "icon": "images/icon.png",
   "options": {
     "query_debounce": 0.1
