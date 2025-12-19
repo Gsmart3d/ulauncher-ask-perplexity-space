@@ -1,13 +1,13 @@
 import webbrowser
-import subprocess
+import pyperclip
+import time
+import pyautogui
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
-from ulauncher.api.shared.event import KeywordQueryEvent
+from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
-from ulauncher.api.shared.action.OpenUrlAction import OpenUrlAction
-from ulauncher.api.shared.action.CopyToClipboardAction import CopyToClipboardAction
-from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
+from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 
 SPACE_URL = "https://www.perplexity.ai/spaces/tiktok-script-v2-O4iFN2DETmu2cgwU7Ez1gQ"
 
@@ -15,6 +15,7 @@ class PerplexityExtension(Extension):
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
+        self.subscribe(ItemEnterEvent, ItemEnterEventListener())
 
 class KeywordQueryEventListener(EventListener):
     def on_event(self, event, extension):
@@ -25,26 +26,49 @@ class KeywordQueryEventListener(EventListener):
                 ExtensionResultItem(
                     icon='images/icon.png',
                     name='Ask TikTok Script Space',
-                    description='Tape ta question après le mot-clé',
-                    on_enter=OpenUrlAction(SPACE_URL)
+                    description='Tape ta question',
+                    on_enter=ExtensionCustomAction({'action': 'open', 'query': ''})
                 )
             ])
 
-        # Copie la question dans le presse-papier puis ouvre l'espace
         return RenderResultListAction([
             ExtensionResultItem(
                 icon='images/icon.png',
-                name=f'Question: {query}',
-                description='Entrée → Ouvre l\'espace + copie la question (Ctrl+V pour coller)',
-                on_enter=CopyToClipboardAction(query)
-            ),
-            ExtensionResultItem(
-                icon='images/icon.png',
-                name='Ouvrir l\'espace TikTok Script',
-                description='Ouvre l\'espace Perplexity',
-                on_enter=OpenUrlAction(SPACE_URL)
+                name=f'{query}',
+                description='Entrée pour poser dans ton espace',
+                on_enter=ExtensionCustomAction({'action': 'search', 'query': query})
             )
         ])
+
+class ItemEnterEventListener(EventListener):
+    def on_event(self, event, extension):
+        data = event.get_data()
+        
+        if data['action'] == 'search':
+            query = data['query']
+            
+            # Copie la question dans le presse-papier
+            pyperclip.copy(query)
+            
+            # Ouvre l'espace
+            webbrowser.open(SPACE_URL)
+            
+            # Attend le chargement
+            time.sleep(3)
+            
+            # Clique au centre de l'écran
+            screen_width, screen_height = pyautogui.size()
+            pyautogui.click(screen_width // 2, screen_height // 2)
+            
+            # Attend un peu
+            time.sleep(0.5)
+            
+            # Ctrl+V pour coller
+            pyautogui.hotkey('ctrl', 'v')
+            
+            # Entrée pour envoyer
+            time.sleep(0.3)
+            pyautogui.press('enter')
 
 if __name__ == '__main__':
     PerplexityExtension().run()
